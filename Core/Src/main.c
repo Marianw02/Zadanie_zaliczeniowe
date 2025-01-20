@@ -97,6 +97,11 @@ void chlodzenie_f(int temp_zadana)
 	HAL_GPIO_WritePin(przek_wiatrak_GPIO_Port, przek_wiatrak_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(przek_grzalka_GPIO_Port, przek_grzalka_Pin, GPIO_PIN_RESET);
 }
+void oczekiwanie_f(int temp_zadana)
+{
+	HAL_GPIO_WritePin(przek_wiatrak_GPIO_Port, przek_wiatrak_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(przek_grzalka_GPIO_Port, przek_grzalka_Pin, GPIO_PIN_SET);
+}
 
 void odbieranie_usart_f()
 {
@@ -111,7 +116,7 @@ void odbieranie_usart_f()
 
 void sterowanie_f()
 {
-	  if(temp_zadana + 1 < temp_calk){
+	  /*if(temp_zadana + 1 < temp_calk){
 		  tryb_swobodny = 0;
 		  grzanie = 0;
 		  chlodzenie = 1;
@@ -134,7 +139,33 @@ void sterowanie_f()
 			  chlodzenie_f(temp_zadana);
 			  chlodzenie = 0;
 		  }
-	  }
+	  }*/
+	if (!grzanie && temp_calk < (temp_zadana)) {
+		grzanie = 1;
+	    chlodzenie = 0;
+	    grzanie_f(temp_zadana);
+	}
+	else if (grzanie && !chlodzenie && temp_calk > (temp_zadana - 1)) {
+		grzanie = 0;
+		oczekiwanie_f(temp_zadana);
+	}
+
+	if (!chlodzenie && temp_calk > temp_zadana) {
+		chlodzenie = 1;
+		grzanie = 0;
+		chlodzenie_f(temp_zadana);
+	}else if (chlodzenie && !grzanie && temp_calk < temp_zadana) {
+		chlodzenie = 0;
+		oczekiwanie_f(temp_zadana);
+	}
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  if(htim == &htim4){
+	  odbieranie_usart_f();
+	  sterowanie_f();
+  }
 }
 /* USER CODE END 0 */
 
@@ -174,7 +205,9 @@ int main(void)
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
   BMP2_Init(&bmp2dev);
+  MX_TIM4_Init();
   HAL_UART_Receive_IT(&huart3, tx_buffer, tx_msg_len);
+  HAL_TIM_Base_Start_IT(&htim4);
 
   HAL_GPIO_WritePin(przek_grzalka_GPIO_Port, przek_grzalka_Pin, GPIO_PIN_SET);
   HAL_GPIO_WritePin(przek_wiatrak_GPIO_Port, przek_wiatrak_Pin, GPIO_PIN_SET);
@@ -189,15 +222,11 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  odbieranie_usart_f();
-
 	  tx_msg_len = sprintf((char*)tx_buffer, "Aktualna temperatura: %2u C, ustawiona temperatura: %2u C. Ustaw wybrana wartosc temperatury:\r", temp_calk, temp_zadana);
 	  HAL_UART_Transmit(&huart3, tx_buffer, tx_msg_len, 100);
 
 	  odebrane_znaki = 0;
 	  prosba_temp = 0;
-
-	  sterowanie_f();
 
 	  HAL_Delay(500);
     /* USER CODE END WHILE */
