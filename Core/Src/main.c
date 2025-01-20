@@ -87,6 +87,20 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	}
 }
 
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	if (GPIO_Pin == Btn_up_Pin){
+		if(temp_zadana < 41){
+			temp_zadana += 1;
+		}
+	}
+	if (GPIO_Pin == Btn_down_Pin){
+		if(temp_zadana > 12){
+			temp_zadana -= 1;
+		}
+		}
+}
+
 void grzanie_f(int temp_zadana)
 {
 	HAL_GPIO_WritePin(przek_grzalka_GPIO_Port, przek_grzalka_Pin, GPIO_PIN_SET);
