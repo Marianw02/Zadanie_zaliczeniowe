@@ -84,7 +84,7 @@ port_label = tk.Label(root, text="Wybierz port szeregowy:")
 port_label.pack(pady=10)
 
 port_var = tk.StringVar(root)
-port_var.set("COM1")
+port_var.set("COM4")
 
 ports = ["COM1", "COM2", "COM3", "COM4", "COM5"]
 port_menu = tk.OptionMenu(root, port_var, *ports)
