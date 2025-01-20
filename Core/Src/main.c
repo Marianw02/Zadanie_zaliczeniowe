@@ -80,7 +80,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 	if(odebrane_znaki == 2){
 		odebrane_znaki = 0;
-		if(prosba_temp >= 19 && prosba_temp <= 36){
+		if(prosba_temp >= 12 && prosba_temp <= 41){
 			temp_zadana = prosba_temp;
 		}
 		prosba_temp = 0;
@@ -97,12 +97,45 @@ void chlodzenie_f(int temp_zadana)
 	HAL_GPIO_WritePin(przek_wiatrak_GPIO_Port, przek_wiatrak_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(przek_grzalka_GPIO_Port, przek_grzalka_Pin, GPIO_PIN_RESET);
 }
-void oczekiwanie_f(int temp_zadana)
+
+void odbieranie_usart_f()
 {
-	HAL_GPIO_WritePin(przek_wiatrak_GPIO_Port, przek_wiatrak_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(przek_grzalka_GPIO_Port, przek_grzalka_Pin, GPIO_PIN_SET);
+	BMP2_ReadData(&bmp2dev, &press, &temp);
+	press_calk = 1000.0f * press / 1000;
+	temp_calk = 1000.0f * temp / 1000;
+
+	HAL_UART_Receive_IT(&huart3, rx_buffer, rx_msg_len);
+	if(wartosc_odebrana >= 12 && wartosc_odebrana <= 41)
+		temp_zadana = wartosc_odebrana;
 }
 
+void sterowanie_f()
+{
+	  if(temp_zadana + 1 < temp_calk){
+		  tryb_swobodny = 0;
+		  grzanie = 0;
+		  chlodzenie = 1;
+	  }else if(temp_zadana - 1 > temp_calk){
+		  tryb_swobodny = 0;
+		  chlodzenie = 0;
+		  grzanie = 1;
+	  }else{
+		  grzanie = 0;
+		  chlodzenie = 0;
+	  }
+
+	  if(grzanie == 1){
+		  if(temp_zadana - 1 < temp_calk){
+			  grzanie = 0;
+			  grzanie_f(temp_zadana);
+		  }
+	  }else if(chlodzenie == 1){
+		  if(temp_zadana > temp_calk){
+			  chlodzenie_f(temp_zadana);
+			  chlodzenie = 0;
+		  }
+	  }
+}
 /* USER CODE END 0 */
 
 /**
@@ -156,44 +189,15 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  BMP2_ReadData(&bmp2dev, &press, &temp);
-	  press_calk = 1000.0f * press / 1000;
-	  temp_calk = 1000.0f * temp / 1000;
+	  odbieranie_usart_f();
 
-	  HAL_UART_Receive_IT(&huart3, rx_buffer, rx_msg_len);
-	  if(wartosc_odebrana >= 19 && wartosc_odebrana <= 36)
-	  	temp_zadana = wartosc_odebrana;
-
-	  tx_msg_len = sprintf((char*)tx_buffer, "Aktualna: %2u ustawiona: %2u \r", temp_calk, temp_zadana);
+	  tx_msg_len = sprintf((char*)tx_buffer, "Aktualna temperatura: %2u C, ustawiona temperatura: %2u C. Ustaw wybrana wartosc temperatury:\r", temp_calk, temp_zadana);
 	  HAL_UART_Transmit(&huart3, tx_buffer, tx_msg_len, 100);
 
 	  odebrane_znaki = 0;
 	  prosba_temp = 0;
 
-	  if(temp_zadana + 1 < temp_calk){
-	  	  tryb_swobodny = 0;
-	  	  grzanie = 0;
-	  	  chlodzenie = 1;
-	  }else if(temp_zadana - 1 > temp_calk){
-	  	  tryb_swobodny = 0;
-	  	  chlodzenie = 0;
-	  	  grzanie = 1;
-	  }else{
-	  	  grzanie = 0;
-	  	  chlodzenie = 0;
-	  }
-
-	  if(grzanie == 1){
-	  	  if(temp_zadana - 1 < temp_calk){
-	  		  grzanie = 0;
-	  		  grzanie_f(temp_zadana);
-	  	  }
-	  }else if(chlodzenie == 1){
-	  	  if(temp_zadana > temp_calk){
-	  		  chlodzenie_f(temp_zadana);
-	  		  chlodzenie = 0;
-	  	  }
-	  }
+	  sterowanie_f();
 
 	  HAL_Delay(500);
     /* USER CODE END WHILE */
