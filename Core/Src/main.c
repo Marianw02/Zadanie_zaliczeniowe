@@ -54,7 +54,7 @@ double temp = 0.0f, press = 0.0f;
 uint32_t tx_buffer[128], rx_buffer[30];
 unsigned int tx_msg_len, rx_msg_len = 1, press_calk, temp_calk;
 int temp_zadana = 0, wartosc_odebrana;
-_Bool tryb_swobodny = 1, grzanie = 0, chlodzenie = 0; //tryb swobodny- przed pierwszym ustawieniem wartosci temperatury
+_Bool grzanie = 0, chlodzenie = 0;
 uint16_t odebrane_znaki = 0, prosba_temp = 0;
 /* USER CODE END PV */
 
@@ -116,30 +116,6 @@ void odbieranie_usart_f()
 
 void sterowanie_f()
 {
-	  /*if(temp_zadana + 1 < temp_calk){
-		  tryb_swobodny = 0;
-		  grzanie = 0;
-		  chlodzenie = 1;
-	  }else if(temp_zadana - 1 > temp_calk){
-		  tryb_swobodny = 0;
-		  chlodzenie = 0;
-		  grzanie = 1;
-	  }else{
-		  grzanie = 0;
-		  chlodzenie = 0;
-	  }
-
-	  if(grzanie == 1){
-		  if(temp_zadana - 1 < temp_calk){
-			  grzanie = 0;
-			  grzanie_f(temp_zadana);
-		  }
-	  }else if(chlodzenie == 1){
-		  if(temp_zadana > temp_calk){
-			  chlodzenie_f(temp_zadana);
-			  chlodzenie = 0;
-		  }
-	  }*/
 	if (!grzanie && temp_calk < (temp_zadana)) {
 		grzanie = 1;
 	    chlodzenie = 0;
