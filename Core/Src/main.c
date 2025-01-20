@@ -50,13 +50,12 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-double temp = 0.0f;     // [degC]
-unsigned int temp_int;	// [mdegC]
-double press = 0.0f;    // [hPa]
-unsigned int press_int; // [Pa]
-uint32_t tx_buffer[128], tx_buffer_receive[30];
-unsigned int tx_msg_len, tx_msg_len_receive = 3, press_swv, temp_swv;
-int duty;
+double temp = 0.0f, press = 0.0f;
+uint32_t tx_buffer[128], rx_buffer[30];
+unsigned int tx_msg_len, rx_msg_len = 1, press_calk, temp_calk;
+int temp_zadana = 0, wartosc_odebrana;
+_Bool tryb_swobodny = 1, grzanie = 0, chlodzenie = 0; //tryb swobodny- przed pierwszym ustawieniem wartosci temperatury
+uint16_t odebrane_znaki = 0, prosba_temp = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -69,11 +68,41 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN 0 */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	HAL_UART_Receive_IT(&huart3, tx_buffer_receive, tx_msg_len_receive);
-	duty = strtol((char*)&tx_buffer_receive[0], 0, 10);
-	if (duty < 99)
-		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, duty*10);
+    HAL_UART_Receive_IT(&huart3, rx_buffer, rx_msg_len);
+	if(sizeof(strtol((char*)&rx_buffer[0], 0, 10)) == 4)//jesli to int
+		wartosc_odebrana = strtol((char*)&rx_buffer[0], 0, 10);
+
+	prosba_temp = prosba_temp * 10 + wartosc_odebrana;
+
+	if (huart->Instance == USART3) {  // Jeśli UART odebrał znak
+		odebrane_znaki++;
+	}
+
+	if(odebrane_znaki == 2){
+		odebrane_znaki = 0;
+		if(prosba_temp >= 19 && prosba_temp <= 36){
+			temp_zadana = prosba_temp;
+		}
+		prosba_temp = 0;
+	}
 }
+
+void grzanie_f(int temp_zadana)
+{
+	HAL_GPIO_WritePin(przek_grzalka_GPIO_Port, przek_grzalka_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(przek_wiatrak_GPIO_Port, przek_wiatrak_Pin, GPIO_PIN_RESET);
+}
+void chlodzenie_f(int temp_zadana)
+{
+	HAL_GPIO_WritePin(przek_wiatrak_GPIO_Port, przek_wiatrak_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(przek_grzalka_GPIO_Port, przek_grzalka_Pin, GPIO_PIN_RESET);
+}
+void oczekiwanie_f(int temp_zadana)
+{
+	HAL_GPIO_WritePin(przek_wiatrak_GPIO_Port, przek_wiatrak_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(przek_grzalka_GPIO_Port, przek_grzalka_Pin, GPIO_PIN_SET);
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -109,11 +138,18 @@ int main(void)
   MX_USART3_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
   MX_SPI4_Init();
-  MX_TIM3_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
   BMP2_Init(&bmp2dev);
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
   HAL_UART_Receive_IT(&huart3, tx_buffer, tx_msg_len);
+
+  HAL_GPIO_WritePin(przek_grzalka_GPIO_Port, przek_grzalka_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(przek_wiatrak_GPIO_Port, przek_wiatrak_Pin, GPIO_PIN_SET);
+
+  BMP2_ReadData(&bmp2dev, &press, &temp);
+  HAL_Delay(10);
+  BMP2_ReadData(&bmp2dev, &press, &temp);
+  temp_zadana = 1000.0f * temp / 1000;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -121,20 +157,44 @@ int main(void)
   while (1)
   {
 	  BMP2_ReadData(&bmp2dev, &press, &temp);
+	  press_calk = 1000.0f * press / 1000;
+	  temp_calk = 1000.0f * temp / 1000;
 
-	  temp_int = 1000.0f*temp;
-	  press_int = 1000.0f*press;
+	  HAL_UART_Receive_IT(&huart3, rx_buffer, rx_msg_len);
+	  if(wartosc_odebrana >= 19 && wartosc_odebrana <= 36)
+	  	temp_zadana = wartosc_odebrana;
 
-	  press_swv = press_int/1000;
-	  temp_swv = temp_int/1000;
-
-	  tx_msg_len = sprintf((char*)tx_buffer, "Temperatura: %2u C, cisnienie: %5u hPa\r", temp_swv, press_swv);
+	  tx_msg_len = sprintf((char*)tx_buffer, "Aktualna: %2u ustawiona: %2u \r", temp_calk, temp_zadana);
 	  HAL_UART_Transmit(&huart3, tx_buffer, tx_msg_len, 100);
 
-	  HAL_UART_Receive_IT(&huart3, tx_buffer_receive, tx_msg_len_receive);
-	  duty = strtol((char*)&tx_buffer_receive[0], 0, 10);
-	  if (duty < 99)
-		  __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, duty*10);
+	  odebrane_znaki = 0;
+	  prosba_temp = 0;
+
+	  if(temp_zadana + 1 < temp_calk){
+	  	  tryb_swobodny = 0;
+	  	  grzanie = 0;
+	  	  chlodzenie = 1;
+	  }else if(temp_zadana - 1 > temp_calk){
+	  	  tryb_swobodny = 0;
+	  	  chlodzenie = 0;
+	  	  grzanie = 1;
+	  }else{
+	  	  grzanie = 0;
+	  	  chlodzenie = 0;
+	  }
+
+	  if(grzanie == 1){
+	  	  if(temp_zadana - 1 < temp_calk){
+	  		  grzanie = 0;
+	  		  grzanie_f(temp_zadana);
+	  	  }
+	  }else if(chlodzenie == 1){
+	  	  if(temp_zadana > temp_calk){
+	  		  chlodzenie_f(temp_zadana);
+	  		  chlodzenie = 0;
+	  	  }
+	  }
+
 	  HAL_Delay(500);
     /* USER CODE END WHILE */
 
