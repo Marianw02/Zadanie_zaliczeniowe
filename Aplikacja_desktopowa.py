@@ -55,10 +55,15 @@ def receive_data():
                         data_previous = data[i]
                     else:
                         data_previous = data_previous + data[i]
-    except Exception as e:
+    except Exception as e: #gdy nie ma połączenia z portem szeregowym
         ser.close()
         connect_with_USART_button.config(text="Połącz", command=connect_with_USART)
         messagebox.showerror("Błąd", f"Utracono połączenie z portem szeregowym")
+        save_button.pack_forget()
+        received_text.config(state=tk.NORMAL)  # właczenie edycji
+        received_text.insert(tk.END, f"\n\n\n")
+        received_text.config(state=tk.DISABLED)  # wyłączenie edycji
+        received_text.see(tk.END)  # przewijanie
 
     root.after(100, receive_data)
 
