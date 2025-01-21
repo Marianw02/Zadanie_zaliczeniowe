@@ -98,7 +98,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		if(temp_zadana > 12){
 			temp_zadana -= 1;
 		}
-		}
+	}
 }
 
 void grzanie_f(int temp_zadana)
@@ -214,7 +214,6 @@ int main(void)
   {
 	  tx_msg_len = sprintf((char*)tx_buffer, "Aktualna temperatura: %2u C, ustawiona temperatura: %2u C. Ustaw wybrana wartosc temperatury:\r", temp_calk, temp_zadana);
 	  HAL_UART_Transmit(&huart3, tx_buffer, tx_msg_len, 100);
-
 	  odebrane_znaki = 0;
 	  prosba_temp = 0;
 

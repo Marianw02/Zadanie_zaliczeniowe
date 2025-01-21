@@ -41,11 +41,11 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  18 .debug_macro  00029dd0  00000000  00000000  0002dc64  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .debug_line   0001dcb6  00000000  00000000  00057a34  2**0
+ 19 .debug_line   0001dcb4  00000000  00000000  00057a34  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 20 .debug_str    000fd786  00000000  00000000  000756ea  2**0
+ 20 .debug_str    000fd786  00000000  00000000  000756e8  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .comment      00000043  00000000  00000000  00172e70  2**0
+ 21 .comment      00000043  00000000  00000000  00172e6e  2**0
                   CONTENTS, READONLY
  22 .debug_frame  000066ac  00000000  00000000  00172eb4  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
@@ -4432,8 +4432,8 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pin = Btn_down_Pin|Btn_up_Pin;
  80024c0:	2312      	movs	r3, #18
  80024c2:	61fb      	str	r3, [r7, #28]
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
- 80024c4:	f44f 1344 	mov.w	r3, #3211264	@ 0x310000
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+ 80024c4:	f44f 1388 	mov.w	r3, #1114112	@ 0x110000
  80024c8:	623b      	str	r3, [r7, #32]
   GPIO_InitStruct.Pull = GPIO_PULLDOWN;
  80024ca:	2302      	movs	r3, #2
@@ -4676,7 +4676,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
  8002652:	4a04      	ldr	r2, [pc, #16]	@ (8002664 <HAL_GPIO_EXTI_Callback+0x48>)
  8002654:	6013      	str	r3, [r2, #0]
 		}
-		}
+	}
 }
  8002656:	bf00      	nop
  8002658:	370c      	adds	r7, #12
@@ -5137,7 +5137,6 @@ int main(void)
  800298a:	490a      	ldr	r1, [pc, #40]	@ (80029b4 <main+0xf0>)
  800298c:	480a      	ldr	r0, [pc, #40]	@ (80029b8 <main+0xf4>)
  800298e:	f004 fa83 	bl	8006e98 <HAL_UART_Transmit>
-
 	  odebrane_znaki = 0;
  8002992:	4b13      	ldr	r3, [pc, #76]	@ (80029e0 <main+0x11c>)
  8002994:	2200      	movs	r2, #0
