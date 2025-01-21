@@ -3,6 +3,8 @@ from tkinter import messagebox
 import serial
 import time
 import threading
+import time
+from datetime import datetime, timedelta
 
 ser = None
 data_previous = ''
@@ -41,17 +43,22 @@ def send_temperature():
 def receive_data():
     global data_previous
 
-    if ser and ser.is_open:
-        if ser.in_waiting > 0:
-            data = ser.readline().decode('utf-8')
-            for i in range(len(data)):
-                if data[i] == 'A':
-                    if save_data == 1:
-                        temp_to_file(data_previous)
-                    display_received_data(data_previous)
-                    data_previous = data[i]
-                else:
-                    data_previous = data_previous + data[i]
+    try:
+        if ser and ser.is_open:
+            if ser.in_waiting > 0:
+                data = ser.readline().decode('utf-8')
+                for i in range(len(data)):
+                    if data[i] == 'A':
+                        if save_data == 1:
+                            temp_to_file(data_previous)
+                        display_received_data(data_previous)
+                        data_previous = data[i]
+                    else:
+                        data_previous = data_previous + data[i]
+    except Exception as e:
+        ser.close()
+        connect_with_USART_button.config(text="Połącz", command=connect_with_USART)
+        messagebox.showerror("Błąd", f"Utracono połączenie z portem szeregowym")
 
     root.after(100, receive_data)
 
@@ -67,10 +74,6 @@ def start_receiving_data():
     root.after(100, receive_data) #co 100ms ta funkcja sie uruchomi
     save_button.pack(pady=10)
 
-
-def close_serial_connection():
-    if ser and ser.is_open:
-        ser.close()
 
 def saving_data():
     global save_data
@@ -128,7 +131,7 @@ port_menu.pack(pady=5)
 connect_with_USART_button = tk.Button(root, text="Połącz", command=connect_with_USART)
 connect_with_USART_button.pack(pady=10)
 
-received_text = tk.Text(root, height=10, state=tk.DISABLED)
+received_text = tk.Text(root, height=3, state=tk.DISABLED)
 received_text.pack(pady=10)
 
 receive_button = tk.Button(root, text="Odbieraj dane", command=start_receiving_data)
