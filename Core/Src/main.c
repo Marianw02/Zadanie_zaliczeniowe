@@ -87,7 +87,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	}
 }
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+/*void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	if (GPIO_Pin == Btn_up_Pin){
 		if(temp_zadana <= war_max){
@@ -99,7 +99,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			temp_zadana -= 1;
 		}
 	}
-}
+}*/
 
 void grzanie_f(int temp_zadana)
 {
@@ -130,7 +130,7 @@ void odbieranie_usart_f()
 
 void sterowanie_f()
 {
-	if (!grzanie && temp_calk < (temp_zadana)) {
+	if (!grzanie && temp_calk < temp_zadana) {
 		grzanie = 1;
 	    chlodzenie = 0;
 	    grzanie_f(temp_zadana);
@@ -140,7 +140,7 @@ void sterowanie_f()
 		oczekiwanie_f(temp_zadana);
 	}
 
-	if (!chlodzenie && temp_calk > temp_zadana) {
+	if (!chlodzenie && temp_calk > temp_zadana-0.2) {
 		chlodzenie = 1;
 		grzanie = 0;
 		chlodzenie_f(temp_zadana);
