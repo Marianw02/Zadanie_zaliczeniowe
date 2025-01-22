@@ -55,7 +55,7 @@ uint32_t tx_buffer[128], rx_buffer[30];
 unsigned int tx_msg_len, rx_msg_len = 1, press_calk, temp_calk;
 int temp_zadana = 0, wartosc_odebrana;
 _Bool grzanie = 0, chlodzenie = 0;
-uint16_t odebrane_znaki = 0, prosba_temp = 0;
+uint16_t odebrane_znaki = 0, prosba_temp = 0, war_max = 84, war_min = 12;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -80,7 +80,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 	if(odebrane_znaki == 2){
 		odebrane_znaki = 0;
-		if(prosba_temp >= 12 && prosba_temp <= 41){
+		if(prosba_temp >= war_min && prosba_temp <= war_max){
 			temp_zadana = prosba_temp;
 		}
 		prosba_temp = 0;
@@ -90,12 +90,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	if (GPIO_Pin == Btn_up_Pin){
-		if(temp_zadana < 41){
+		if(temp_zadana <= war_max){
 			temp_zadana += 1;
 		}
 	}
 	if (GPIO_Pin == Btn_down_Pin){
-		if(temp_zadana > 12){
+		if(temp_zadana >= war_min){
 			temp_zadana -= 1;
 		}
 	}
@@ -124,7 +124,7 @@ void odbieranie_usart_f()
 	temp_calk = 1000.0f * temp / 1000;
 
 	HAL_UART_Receive_IT(&huart3, rx_buffer, rx_msg_len);
-	if(wartosc_odebrana >= 12 && wartosc_odebrana <= 41)
+	if(wartosc_odebrana >= war_min && wartosc_odebrana <= war_max)
 		temp_zadana = wartosc_odebrana;
 }
 
