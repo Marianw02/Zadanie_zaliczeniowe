@@ -87,7 +87,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	}
 }
 
-/*void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	if (GPIO_Pin == Btn_up_Pin){
 		if(temp_zadana <= war_max){
@@ -99,7 +99,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 			temp_zadana -= 1;
 		}
 	}
-}*/
+}
 
 void grzanie_f(int temp_zadana)
 {

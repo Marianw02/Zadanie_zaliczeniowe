@@ -1,4 +1,5 @@
 ../Core/Src/main.c:69:6:HAL_UART_RxCpltCallback	5
+../Core/Src/main.c:90:6:HAL_GPIO_EXTI_Callback	5
 ../Core/Src/main.c:104:6:grzanie_f	1
 ../Core/Src/main.c:109:6:chlodzenie_f	1
 ../Core/Src/main.c:114:6:oczekiwanie_f	1
